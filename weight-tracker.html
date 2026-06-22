@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weight + Resistance Tracker — 170 → 156</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#000; --bg:#fff; --line:#000;
+    --proj:#c8860a; --actual:#1a73e8;
+    --muted:#666; --hair:#d9d9d9; --good:#1a7f37; --behind:#b3261e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.45; font-size:17px;
+    padding:18px 16px 60px; max-width:680px; margin:0 auto;
+  }
+  h1{font-size:1.45rem; margin:0 0 2px}
+  .sub{color:var(--muted); margin:0 0 18px; font-size:0.95rem}
+  .card{border:2px solid var(--ink); border-radius:14px; padding:16px; margin-bottom:18px}
+  label{display:block; font-weight:700; font-size:0.9rem; margin-bottom:5px}
+  input, select, button{
+    font-family:inherit; font-size:1rem; color:var(--ink); background:#fff;
+    border:2px solid var(--ink); border-radius:10px; padding:11px 12px; width:100%;
+  }
+  input:focus, select:focus, button:focus{outline:3px solid var(--actual); outline-offset:2px}
+  .row{display:flex; gap:10px; flex-wrap:wrap}
+  .row > div{flex:1 1 120px}
+  button{cursor:pointer; font-weight:700; -webkit-tap-highlight-color:transparent}
+  button.primary{background:var(--ink); color:#fff; margin-top:12px}
+  button.primary:active{background:#222}
+  .status{font-size:1.05rem}
+  .status .big{font-size:1.6rem; font-weight:700; display:block; margin:2px 0}
+  .good{color:var(--good)} .behind{color:var(--behind)}
+  svg{width:100%; height:auto; display:block}
+  .legend{display:flex; gap:16px; font-size:0.85rem; color:var(--muted); margin-top:8px; flex-wrap:wrap}
+  .legend span{display:inline-flex; align-items:center; gap:6px}
+  .swatch{width:18px; height:3px; display:inline-block; border-radius:2px}
+  .swatch.dash{height:0; border-top:3px dashed var(--proj)}
+  table{width:100%; border-collapse:collapse; font-size:0.95rem}
+  th,td{text-align:left; padding:9px 4px; border-bottom:1px solid var(--hair)}
+  th{font-size:0.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em}
+  td.num{font-variant-numeric:tabular-nums}
+  .del{border:none; background:none; width:auto; padding:6px 8px; color:var(--behind); font-weight:700; font-size:1.1rem}
+  .empty{color:var(--muted); font-style:italic; padding:14px 2px}
+  details{margin-bottom:18px}
+  summary{font-weight:700; cursor:pointer; padding:6px 0}
+  .unit-toggle{display:flex; gap:0; max-width:160px}
+  .unit-toggle button{border-radius:0; width:50%}
+  .unit-toggle button:first-child{border-radius:10px 0 0 10px}
+  .unit-toggle button:last-child{border-radius:0 10px 10px 0; border-left:none}
+  .unit-toggle button.on{background:var(--ink); color:#fff}
+  .hint{font-size:0.82rem; color:var(--muted); margin-top:6px}
+  #todayLine{font-size:1.02rem}
+  #todayLine .big{font-size:1.35rem; font-weight:700; display:block; margin-top:2px}
+  .sched{margin-top:12px}
+  .sched .day{display:flex; gap:12px; padding:9px 4px; border-bottom:1px solid var(--hair); align-items:baseline}
+  .sched .day:last-child{border-bottom:none}
+  .sched .day .dn{font-weight:700; width:40px; flex:none}
+  .sched .day .ds{flex:1}
+  .sched .day.today{background:#f1f7ff; border:2px solid var(--actual); border-radius:8px; padding:8px}
+  .sched .day.rest .ds{color:var(--muted)}
+  .phase-toggle{display:flex; max-width:240px}
+  .phase-toggle button{border-radius:0; width:33.34%; padding:9px 6px}
+  .phase-toggle button:first-child{border-radius:10px 0 0 10px}
+  .phase-toggle button:last-child{border-radius:0 10px 10px 0}
+  .phase-toggle button:not(:first-child){border-left:none}
+  .phase-toggle button.on{background:var(--ink); color:#fff}
+  .phaseNote{font-size:0.85rem; color:var(--muted); margin:10px 2px 0; font-weight:700}
+  .bigcount{font-size:1.6rem; font-weight:700}
+  .weekstrip{display:flex; gap:6px; flex-wrap:wrap; margin-top:14px}
+  .wk{flex:1 1 36px; min-width:36px; text-align:center; border:1.5px solid var(--hair);
+      border-radius:8px; padding:6px 2px; font-size:0.72rem; color:var(--muted)}
+  .wk.cur{border-color:var(--ink); border-width:2px; color:var(--ink)}
+  .wk.hit{background:#eef7ee; border-color:var(--good)}
+  .wk .c{display:block; font-size:1.15rem; font-weight:700; color:var(--ink)}
+  .wk .c.done{color:var(--good)}
+  .exlist{margin:8px 0 0}
+  .ex{margin:0; border-bottom:1px solid var(--hair)}
+  .ex:last-of-type{border-bottom:none}
+  .ex summary{padding:10px 2px; font-weight:700; font-size:0.92rem; cursor:pointer;
+    display:flex; align-items:baseline; gap:10px; list-style:none}
+  .ex summary::-webkit-details-marker{display:none}
+  .ex summary em{font-style:normal; font-weight:400; color:var(--muted); font-size:0.8rem; margin-left:auto; white-space:nowrap}
+  .ex summary::after{content:"+"; color:var(--muted); font-weight:700; margin-left:8px}
+  .ex[open] summary::after{content:"\2013"}
+  .ex p{margin:0 2px 12px; font-size:0.88rem; line-height:1.55; color:#222}
+  .ex summary .vid{font-size:0.72rem; font-weight:700; color:var(--actual); text-decoration:none;
+    border:1.5px solid var(--actual); border-radius:6px; padding:2px 7px; margin-left:10px; white-space:nowrap}
+  .ex summary .vid:active{background:#eef4ff}
+</style>
+</head>
+<body>
+  <h1>Weight + Resistance</h1>
+  <p class="sub" id="subline">170 → 156 lb · ~1 lb/week · 14 weeks · target ~1,880 kcal/day</p>
+
+  <div class="card">
+    <label for="unit">Units</label>
+    <div class="unit-toggle" id="unitToggle">
+      <button type="button" data-unit="lb" class="on">lb</button>
+      <button type="button" data-unit="st">st</button>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div>
+        <label for="d">Date</label>
+        <input type="date" id="d">
+      </div>
+      <div>
+        <label for="w" id="wLabel">Morning weight (lb)</label>
+        <input type="number" id="w" step="0.1" inputmode="decimal" placeholder="e.g. 169.4">
+      </div>
+    </div>
+    <button class="primary" id="add">Log weight</button>
+    <p class="hint">Weigh first thing, same conditions each day. Logging an existing date overwrites it.</p>
+  </div>
+
+  <div class="card status" id="statusCard">
+    <div id="statusBody"><span class="empty">Log your first weight to see how you're tracking.</span></div>
+  </div>
+
+  <div class="card">
+    <svg id="chart" viewBox="0 0 680 380" role="img" aria-label="Weight against projection line"></svg>
+    <div class="legend">
+      <span><i class="swatch" style="background:var(--actual)"></i> Your weight</span>
+      <span><i class="swatch dash"></i> Plan (~1 lb/wk)</span>
+    </div>
+  </div>
+
+  <div class="card" id="scheduleCard">
+    <label>This week — rest Wed &amp; Sun</label>
+    <div style="font-size:.85rem;font-weight:700;margin-bottom:5px">Ramp-up phase</div>
+    <div class="phase-toggle" id="phaseToggle">
+      <button type="button" data-phase="1" class="on">1</button>
+      <button type="button" data-phase="2">2</button>
+      <button type="button" data-phase="3">3</button>
+    </div>
+    <div id="todayLine" style="margin-top:14px"></div>
+    <div class="sched" id="sched"></div>
+  </div>
+
+  <div class="card" id="bandCard">
+    <label>Resistance (bands) — aim 2–3 / week to protect lean mass</label>
+    <div id="bandStatus"></div>
+    <input type="date" id="bd" style="margin-top:12px">
+    <button class="primary" id="logBand" style="margin-top:10px">Log band session</button>
+    <div class="weekstrip" id="weekstrip"></div>
+    <details style="margin-top:14px; margin-bottom:0">
+      <summary>Full-body session — bands + bodyweight (knee-friendly)</summary>
+      <div class="exlist">
+        <details class="ex" data-phase="0"><summary>Setup <em>anchoring</em></summary>
+          <p>You've two flat bands — yellow lighter, red harder. Four tricks: (1) stand on the middle for curls, raises and RDLs; (2) knot one end and shut it in a closed door (knot on the far side) for rows, chest press and Pallof; (3) wrap the ends a couple of turns round your hands to shorten the band and make it harder; (4) tie both ends together into a loop for the glute bridge. To progress without buying more: shorten your grip, go yellow → red, or use both bands at once.</p></details>
+        <details class="ex" data-phase="1"><summary>Squat (chair / box) <em>2–3 × 12–15</em></summary>
+          <p>No kit, knee-friendly. Stand in front of a chair, feet shoulder-width. Push your hips back and lower under control to lightly touch the seat (don't flop down), then drive through your heels to stand. Weight in your heels, knees tracking over your toes. Use a lower seat over time for more depth.</p></details>
+        <details class="ex" data-phase="1"><summary>Chest press <em>2–3 × 12–15</em></summary>
+          <p>No anchor needed: run the band across your upper back (under the shoulder blades) and hold an end in each hand at chest level, elbows bent. Press forward until your arms are straight, then return slowly. Wrap the ends shorter for more resistance.</p></details>
+        <details class="ex" data-phase="1"><summary>Band row <em>2–3 × 12–15</em></summary>
+          <p>Knot the band into a door at chest height (or sit on the floor, legs out, and loop it round your feet). Wrap an end round each hand, arms straight, step back to tension it. Pull to your ribs, squeezing your shoulder blades together, elbows skimming past your sides. Control it back out.</p></details>
+        <details class="ex" data-phase="1"><summary>Glute bridge <em>2–3 × 12–15</em></summary>
+          <p>Tie a band into a loop and sit it just above your knees. Lie on your back, knees bent, feet flat. Drive through your heels and lift your hips into a straight line from shoulders to knees, pushing the knees gently outward against the loop. Squeeze the glutes at the top, lower slowly. No knee loading.</p></details>
+        <details class="ex" data-phase="1"><summary>Plank <em>2–3 × 20–40 sec</em></summary>
+          <p>No kit. Forearms under shoulders, body in a straight line from head to heels — backside neither sagging nor piked. Brace your stomach as if about to be poked, breathe steadily, hold. Drop to your knees if your lower back starts to dip.</p></details>
+        <details class="ex" data-phase="2"><summary>Romanian deadlift (hip hinge) <em>2–3 × 12</em></summary>
+          <p>Stand on the middle of the band, an end in each hand, knees softly bent but still. Push your hips back and slide your hands down your shins, back flat. Drive your hips forward to stand tall. The bend is at the hips, not the knees.</p></details>
+        <details class="ex" data-phase="2"><summary>Lateral raise <em>2 × 12–15</em></summary>
+          <p>Stand on the middle of the band, an end in each hand by your sides. Raise both arms out sideways to shoulder height with a slight elbow bend, then lower slowly. Lead with the elbows; don't shrug. Wrap the ends shorter if it's too easy.</p></details>
+        <details class="ex" data-phase="2"><summary>Pull-apart <em>2 × 15</em></summary>
+          <p>No anchor: hold the band out in front at shoulder height, hands shoulder-width, arms straight. Pull it apart by squeezing your shoulder blades together until your arms are wide, then return slowly. Hands closer together = harder. Brilliant for posture.</p></details>
+        <details class="ex" data-phase="3"><summary>Press-up <em>2–3 × 6–12</em></summary>
+          <p>No kit. Hands under shoulders, body in a straight line. Lower your chest under control with elbows angled back (not flared), then press up. Too hard? Do them on an incline — hands on the bed, sofa or kitchen counter — or on your knees. Build the reps over time.</p></details>
+        <details class="ex" data-phase="3"><summary>Curl + overhead triceps <em>2 × 12 each</em></summary>
+          <p>Curl: stand on the band, palms forward, curl the ends to your shoulders with elbows pinned to your sides, lower slowly. Triceps: pin one end under your foot or behind your hip, grip the other end and straighten that arm overhead, then lower.</p></details>
+        <details class="ex" data-phase="3"><summary>Pallof press <em>2 × 10 / side</em></summary>
+          <p>Knot the band into a door at chest height, to one side of you. Stand side-on, hold the end at your chest with both hands, press straight out in front and resist the pull trying to twist you. Hold a second, bring it back. Both sides. Step further away for more tension.</p></details>
+      </div>
+      <p class="phaseNote" id="phaseNote"></p>
+      <p class="hint">Tap any exercise for the how-to. Controlled reps, last 2 should feel hard, ~25–30 min. Swap for your own programme if you prefer.</p>
+    </details>
+  </div>
+
+  <details id="settings">
+    <summary>Plan settings</summary>
+    <div class="card">
+      <div class="row">
+        <div><label for="sDate">Start date</label><input type="date" id="sDate"></div>
+        <div><label for="sWeeks">Weeks</label><input type="number" id="sWeeks" step="1" min="1"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div><label for="sStart" id="sStartLabel">Start weight (lb)</label><input type="number" id="sStart" step="0.1"></div>
+        <div><label for="sGoal" id="sGoalLabel">Goal weight (lb)</label><input type="number" id="sGoal" step="0.1"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div><label for="sBand">Band sessions / week target</label><input type="number" id="sBand" step="1" min="1" max="7"></div>
+      </div>
+      <button class="primary" id="saveSettings">Save plan</button>
+    </div>
+  </details>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>Date</th><th>Weight</th><th>vs plan</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "weightTracker_v1";
+  var DEFAULTS = {
+    settings: { startDate: todayISO(), startW: 170.1, goalW: 156, weeks: 14, unit: "lb", bandTarget: 3, phase: 1 },
+    entries: [], sessions: []
+  };
+  var state = load();
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(!raw) return clone(DEFAULTS);
+      var s = JSON.parse(raw);
+      s.settings = Object.assign(clone(DEFAULTS.settings), s.settings||{});
+      s.entries = Array.isArray(s.entries) ? s.entries : [];
+      s.sessions = Array.isArray(s.sessions) ? s.sessions : [];
+      return s;
+    }catch(e){ return clone(DEFAULTS); }
+  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+  function todayISO(){ var n=new Date(); return n.getFullYear()+"-"+pad(n.getMonth()+1)+"-"+pad(n.getDate()); }
+  function pad(n){ return (n<10?"0":"")+n; }
+  function dayNum(iso){ var p=iso.split("-"); return Math.floor(Date.UTC(+p[0],+p[1]-1,+p[2])/86400000); }
+  function weekOf(iso){ return (dayNum(iso)-dayNum(state.settings.startDate))/7; }
+  function weekIndex(iso){ return Math.floor(weekOf(iso)); }
+
+  function unit(){ return state.settings.unit; }
+  function toDisplay(lb){ return unit()==="st" ? lb/14 : lb; }
+  function fromDisplay(v){ return unit()==="st" ? v*14 : v; }
+  function fmt(lb, dp){ dp = dp==null ? (unit()==="st"?2:1) : dp; return toDisplay(lb).toFixed(dp); }
+  function uLabel(){ return unit()==="st" ? "st" : "lb"; }
+
+  function projAt(weekFloat){
+    var s=state.settings, t=Math.max(0,Math.min(s.weeks,weekFloat));
+    return s.startW + (s.goalW-s.startW)*(t/s.weeks);
+  }
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  function render(){
+    var s=state.settings;
+    $("subline").textContent = fmt(s.startW)+" → "+fmt(s.goalW)+" "+uLabel()+" · ~1 lb/week · "+s.weeks+" weeks · target ~1,880 kcal/day";
+    $("wLabel").textContent = "Morning weight ("+uLabel()+")";
+    $("sStartLabel").textContent = "Start weight ("+uLabel()+")";
+    $("sGoalLabel").textContent = "Goal weight ("+uLabel()+")";
+    if(!$("d").value) $("d").value = todayISO();
+    Array.prototype.forEach.call($("unitToggle").children, function(b){
+      b.classList.toggle("on", b.getAttribute("data-unit")===unit());
+    });
+    $("sDate").value = s.startDate;
+    $("sWeeks").value = s.weeks;
+    $("sStart").value = (+toDisplay(s.startW).toFixed(unit()==="st"?2:1));
+    $("sGoal").value  = (+toDisplay(s.goalW).toFixed(unit()==="st"?2:1));
+    $("sBand").value = s.bandTarget;
+
+    renderStatus();
+    renderChart();
+    renderSchedule();
+    renderPhase();
+    renderResistance();
+    renderRows();
+  }
+
+  function sortedEntries(){
+    return state.entries.slice().sort(function(a,b){ return dayNum(a.date)-dayNum(b.date); });
+  }
+
+  function renderStatus(){
+    var es=sortedEntries(), body=$("statusBody");
+    if(!es.length){ body.innerHTML='<span class="empty">Log your first weight to see how you\'re tracking.</span>'; return; }
+    var latest=es[es.length-1], wk=weekOf(latest.date), target=projAt(wk);
+    var diff=target-latest.w, lost=state.settings.startW-latest.w, html="";
+    html += "Latest: <span class='big'>"+fmt(latest.w)+" "+uLabel()+"</span>";
+    html += "Lost so far: <strong>"+fmt(Math.max(0,lost),1)+" "+uLabel()+"</strong> · ";
+    html += "to go: <strong>"+fmt(Math.max(0,latest.w-state.settings.goalW),1)+" "+uLabel()+"</strong><br>";
+    if(Math.abs(diff)<0.5){ html += "<span class='good'>On track</span> — right on the plan line for week "+wk.toFixed(1)+"."; }
+    else if(diff>0){ html += "<span class='good'>"+fmt(Math.abs(diff),1)+" "+uLabel()+" ahead of plan</span> at week "+wk.toFixed(1)+"."; }
+    else { html += "<span class='behind'>"+fmt(Math.abs(diff),1)+" "+uLabel()+" behind plan</span> at week "+wk.toFixed(1)+" — the multi-week trend matters more than one reading."; }
+    body.innerHTML=html;
+  }
+
+  var PHASE_INFO = {
+    1:"Phase 1 · 1 set · yellow band · 5 moves · strength Mon & Thu",
+    2:"Phase 2 · 2 sets · red on big lifts · 8 moves · strength Mon & Thu",
+    3:"Phase 3 · 2–3 sets · full session · strength Mon, Thu & Sat"
+  };
+  function planFor(phase){
+    var tue = phase>=2 ? "Cardio — bike or brisk walk" : "Easy 20-min walk (optional)";
+    var sat = phase>=3 ? ["Strength — full-body (lighter)","s"] : ["Rest / easy walk","r"];
+    return [
+      ["Mon","Strength — full-body","s"],
+      ["Tue",tue,"c"],
+      ["Wed","Rest","r"],
+      ["Thu","Strength — full-body","s"],
+      ["Fri","Walking football","c"],
+      ["Sat",sat[0],sat[1]],
+      ["Sun","Rest","r"]
+    ];
+  }
+  function fullDay(dow){ return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][dow]; }
+  function renderSchedule(){
+    var plan=planFor(state.settings.phase||1);
+    var dow=new Date().getDay(), idx=(dow+6)%7, today=plan[idx];
+    $("todayLine").innerHTML="Today — "+fullDay(dow)+"<span class='big'>"+today[1]+"</span>";
+    var c=$("sched"); c.innerHTML="";
+    plan.forEach(function(p,i){
+      var div=document.createElement("div");
+      div.className="day"+(i===idx?" today":"")+(p[2]==="r"?" rest":"");
+      div.innerHTML="<span class='dn'>"+p[0]+"</span><span class='ds'>"+p[1]+"</span>";
+      c.appendChild(div);
+    });
+  }
+  var YT = [null,
+    "chair squat proper form",
+    "resistance band chest press form",
+    "resistance band row proper form",
+    "glute bridge exercise form",
+    "plank proper form beginner",
+    "resistance band romanian deadlift form",
+    "resistance band lateral raise form",
+    "band pull apart exercise form",
+    "push up proper form beginner",
+    "resistance band bicep curl tricep extension",
+    "band pallof press form"];
+  function buildVideoLinks(){
+    var list=document.querySelectorAll(".exlist .ex");
+    Array.prototype.forEach.call(list,function(d,i){
+      var q=YT[i]; if(!q) return;
+      var sum=d.querySelector("summary"); if(!sum || sum.querySelector(".vid")) return;
+      var a=document.createElement("a");
+      a.className="vid"; a.textContent="▶ video";
+      a.href="https://www.youtube.com/results?search_query="+encodeURIComponent(q);
+      a.target="_blank"; a.rel="noopener";
+      a.addEventListener("click",function(e){ e.stopPropagation(); });
+      var em=sum.querySelector("em");
+      if(em) sum.insertBefore(a, em); else sum.appendChild(a);
+    });
+  }
+
+  function renderPhase(){
+    var p=state.settings.phase||1;
+    Array.prototype.forEach.call($("phaseToggle").children,function(b){
+      b.classList.toggle("on", parseInt(b.getAttribute("data-phase"),10)===p);
+    });
+    var note=$("phaseNote"); if(note) note.textContent=PHASE_INFO[p];
+    var list=document.querySelectorAll(".exlist .ex");
+    Array.prototype.forEach.call(list,function(d){
+      var dp=parseInt(d.getAttribute("data-phase"),10)||0;
+      d.style.display=(dp<=p)?"":"none";
+    });
+  }
+  function setPhase(p){ state.settings.phase=p; save(); render(); }
+
+  function sessionsInWeek(wi){
+    return state.sessions.filter(function(s){ return weekIndex(s.date)===wi; }).length;
+  }
+  function renderResistance(){
+    var target=state.settings.bandTarget||3, curWk=weekIndex(todayISO()), have=sessionsInWeek(curWk);
+    var sb=$("bandStatus"), msg;
+    if(curWk<0){ msg="Plan hasn't started yet — sessions will count from the start date."; have=0; }
+    else if(have>=target) msg="<span class='good'>Target hit for this week — nice.</span>";
+    else if(have>=2) msg="<span class='good'>In the muscle-protecting zone.</span> "+(target-have)+" more to reach "+target+".";
+    else msg=(Math.max(0,target-have))+" to go this week (2 is enough to protect lean mass; 3 is ideal).";
+    sb.innerHTML="<span class='bigcount'>"+Math.max(0,have)+" / "+target+"</span> band sessions this week<br>"+msg;
+
+    var strip=$("weekstrip"); strip.innerHTML="";
+    var endWk=Math.max(curWk,0), startWk=Math.max(0,endWk-7);
+    for(var wi=startWk; wi<=endWk; wi++){
+      var c=sessionsInWeek(wi), div=document.createElement("div");
+      div.className="wk"+(wi===curWk?" cur":"")+(c>=2?" hit":"");
+      div.innerHTML="<span class='c"+(c>=target?" done":"")+"'>"+c+"</span>wk "+wi;
+      strip.appendChild(div);
+    }
+    if(!$("bd").value) $("bd").value=todayISO();
+    updateBandBtn();
+  }
+  function updateBandBtn(){
+    var d=$("bd").value||todayISO();
+    var exists=state.sessions.some(function(s){ return s.date===d; });
+    $("logBand").textContent = exists ? "Remove session ("+d+")" : "Log band session";
+  }
+  function logBandToggle(){
+    var d=$("bd").value||todayISO();
+    var i=state.sessions.findIndex(function(s){ return s.date===d; });
+    if(i>=0) state.sessions.splice(i,1); else state.sessions.push({date:d});
+    save(); render();
+  }
+
+  function renderChart(){
+    var svg=$("chart"), W=680,H=380,m={t:16,r:16,b:34,l:42}, s=state.settings, es=sortedEntries();
+    var maxWeek=s.weeks; es.forEach(function(e){ maxWeek=Math.max(maxWeek,weekOf(e.date)); });
+    if(maxWeek<1) maxWeek=1;
+    var lo=s.goalW,hi=s.startW; es.forEach(function(e){ lo=Math.min(lo,e.w); hi=Math.max(hi,e.w); });
+    lo-=2; hi+=2;
+    function X(week){ return m.l+(week/maxWeek)*(W-m.l-m.r); }
+    function Y(lb){ return m.t+(1-(lb-lo)/(hi-lo))*(H-m.t-m.b); }
+    var ns="http://www.w3.org/2000/svg";
+    while(svg.firstChild) svg.removeChild(svg.firstChild);
+    function el(tag,attrs){ var e=document.createElementNS(ns,tag); for(var k in attrs) e.setAttribute(k,attrs[k]); return e; }
+    svg.appendChild(el("line",{x1:m.l,y1:Y(lo),x2:W-m.r,y2:Y(lo),stroke:"#000","stroke-width":1.5}));
+    svg.appendChild(el("line",{x1:m.l,y1:m.t,x2:m.l,y2:Y(lo),stroke:"#000","stroke-width":1.5}));
+    var step=(hi-lo)>18?4:2;
+    for(var v=Math.ceil(lo/step)*step; v<=hi; v+=step){
+      svg.appendChild(el("line",{x1:m.l-4,y1:Y(v),x2:W-m.r,y2:Y(v),stroke:"#ededed","stroke-width":1}));
+      var t=el("text",{x:m.l-7,y:Y(v)+4,"text-anchor":"end","font-size":11,fill:"#666"});
+      t.textContent=toDisplay(v).toFixed(unit()==="st"?1:0); svg.appendChild(t);
+    }
+    var xs=maxWeek>7?2:1;
+    for(var wk=0; wk<=Math.ceil(maxWeek); wk+=xs){
+      var xt=el("text",{x:X(wk),y:H-12,"text-anchor":"middle","font-size":11,fill:"#666"}); xt.textContent=wk; svg.appendChild(xt);
+    }
+    var xlab=el("text",{x:(m.l+W-m.r)/2,y:H,"text-anchor":"middle","font-size":11,fill:"#666"}); xlab.textContent="week"; svg.appendChild(xlab);
+    svg.appendChild(el("line",{x1:X(0),y1:Y(s.startW),x2:X(s.weeks),y2:Y(s.goalW),stroke:"var(--proj)","stroke-width":2.5,"stroke-dasharray":"7 5","stroke-linecap":"round"}));
+    var gt=el("text",{x:X(s.weeks),y:Y(s.goalW)-7,"text-anchor":"end","font-size":11,fill:"var(--proj)","font-weight":700}); gt.textContent=fmt(s.goalW)+" goal"; svg.appendChild(gt);
+    var tw=weekOf(todayISO());
+    if(tw>=0&&tw<=maxWeek) svg.appendChild(el("line",{x1:X(tw),y1:m.t,x2:X(tw),y2:Y(lo),stroke:"#bbb","stroke-width":1,"stroke-dasharray":"2 4"}));
+    if(es.length){
+      var d=""; es.forEach(function(e,i){ var x=X(weekOf(e.date)),y=Y(e.w); d+=(i?" L":"M")+x.toFixed(1)+" "+y.toFixed(1); });
+      svg.appendChild(el("path",{d:d,fill:"none",stroke:"var(--actual)","stroke-width":2.5,"stroke-linejoin":"round"}));
+      es.forEach(function(e){ svg.appendChild(el("circle",{cx:X(weekOf(e.date)),cy:Y(e.w),r:4,fill:"#fff",stroke:"var(--actual)","stroke-width":2.5})); });
+    }
+  }
+
+  function renderRows(){
+    var tb=$("rows"); tb.innerHTML="";
+    var es=sortedEntries().reverse();
+    if(!es.length){ tb.innerHTML='<tr><td colspan="4" class="empty">No entries yet.</td></tr>'; return; }
+    es.forEach(function(e){
+      var tr=document.createElement("tr"), wk=weekOf(e.date), diff=projAt(wk)-e.w;
+      var vs=Math.abs(diff)<0.5?"on track":(diff>0?"+"+fmt(diff,1)+" ahead":fmt(diff,1)+" behind");
+      var cls=Math.abs(diff)<0.5?"":(diff>0?"good":"behind");
+      tr.innerHTML="<td>"+e.date+"</td><td class='num'>"+fmt(e.w)+" "+uLabel()+"</td><td class='num "+cls+"'>"+vs+"</td><td style='text-align:right'></td>";
+      var btn=document.createElement("button"); btn.className="del"; btn.textContent="×"; btn.setAttribute("aria-label","Delete "+e.date);
+      btn.onclick=function(){ removeEntry(e.date); };
+      tr.lastChild.appendChild(btn); tb.appendChild(tr);
+    });
+  }
+
+  function addEntry(){
+    var date=$("d").value||todayISO(), raw=parseFloat($("w").value);
+    if(isNaN(raw)){ $("w").focus(); return; }
+    var lb=fromDisplay(raw), i=state.entries.findIndex(function(e){ return e.date===date; });
+    if(i>=0) state.entries[i].w=lb; else state.entries.push({date:date,w:lb});
+    $("w").value=""; save(); render();
+  }
+  function removeEntry(date){ state.entries=state.entries.filter(function(e){ return e.date!==date; }); save(); render(); }
+  function setUnit(u){ if(u===unit()) return; state.settings.unit=u; save(); render(); }
+  function saveSettings(){
+    var s=state.settings;
+    var sd=$("sDate").value; if(sd) s.startDate=sd;
+    var wks=parseInt($("sWeeks").value,10); if(wks>0) s.weeks=wks;
+    var sw=parseFloat($("sStart").value); if(!isNaN(sw)) s.startW=fromDisplay(sw);
+    var gw=parseFloat($("sGoal").value); if(!isNaN(gw)) s.goalW=fromDisplay(gw);
+    var bt=parseInt($("sBand").value,10); if(bt>0) s.bandTarget=bt;
+    save(); render(); $("settings").open=false;
+  }
+
+  $("add").onclick=addEntry;
+  $("saveSettings").onclick=saveSettings;
+  $("logBand").onclick=logBandToggle;
+  $("bd").addEventListener("change", updateBandBtn);
+  Array.prototype.forEach.call($("unitToggle").children, function(b){ b.onclick=function(){ setUnit(b.getAttribute("data-unit")); }; });
+  Array.prototype.forEach.call($("phaseToggle").children, function(b){ b.onclick=function(){ setPhase(parseInt(b.getAttribute("data-phase"),10)); }; });
+  $("w").addEventListener("keydown", function(e){ if(e.key==="Enter") addEntry(); });
+
+  render();
+  buildVideoLinks();
+})();
+</script>
+</body>
+</html>
